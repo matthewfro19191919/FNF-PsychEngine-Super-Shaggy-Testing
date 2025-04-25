@@ -1,5 +1,7 @@
 package states.stages;
 
+import states.stages.objects.*;
+
 // Required Dependencies/Imports (Assuming a HaxeFlixel or similar context)
 // Note: These imports are assumptions based on common Haxe game frameworks.
 // The actual imports might differ based on the specific framework used.
