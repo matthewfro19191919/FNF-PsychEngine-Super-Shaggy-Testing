@@ -1,5 +1,3 @@
-package shaggymodchart;
-
 import haxe.ds.Vector;
 import Math;
 
