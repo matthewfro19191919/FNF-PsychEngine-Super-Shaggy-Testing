@@ -8,7 +8,7 @@ import shaggymodchart.ModScript;
 
 class CaveStage
 
-function create() {
+public static function create() {
     var bg = sprite_load("cavebg/bg");
     offset_setby_fraction(bg, 0.5, 0.5);
     var super_bg = sprite_load("cavebg/super_bg");
