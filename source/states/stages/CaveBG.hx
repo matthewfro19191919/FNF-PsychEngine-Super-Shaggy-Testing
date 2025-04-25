@@ -21,7 +21,7 @@ import flixel.util.FlxColor; // Assuming c_black/c_white map to FlxColor
 // c_black:Int // Color constant
 // c_white:Int // Color constant
 
-class CaveBG {
+class CaveBG extends BaseStage {
     // Static variables to hold sprite references, mimicking Lua's global scope
     static var bg:Dynamic;
     static var super_bg:Dynamic;
@@ -69,7 +69,7 @@ class CaveBG {
             }
              // Handle potential array access like "cam.0"
              var numIndex = Std.parseInt(part);
-             if (numIndex != null && Std.string(numIndex) == part && current is Array<Dynamic>) {
+             if (numIndex != null && Std.string(numIndex) == part) {
                  current = current[numIndex];
              } else {
                 current = Reflect.field(current, part);
@@ -78,7 +78,7 @@ class CaveBG {
         var finalPart = parts[parts.length - 1];
         var numIndex = Std.parseInt(finalPart);
          if (current != null) {
-             if (numIndex != null && Std.string(numIndex) == finalPart && current is Array<Dynamic>) {
+             if (numIndex != null && Std.string(numIndex) == finalPart) {
                  current[numIndex] = value;
              } else {
                 Reflect.setProperty(current, finalPart, value);
