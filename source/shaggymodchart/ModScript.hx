@@ -457,13 +457,8 @@ class ModScript {
                         w = w * -1;
                     }
                     tweenStart([obj_game, "field." + curSide], {x : w, z : 0.}, 1, "out_quad");
-                    tweenStart([obj_game, "field." + oSide], {x : 0. // <<< Haxe syntax error: Incomplete statement due to exact translation of incomplete Lua code. The original Lua line ended abruptly here.
-                    // The original likely intended something like: {x : 0., z : -100.}, 1, "out_quad");
-                    // However, per requirements, translating exactly, including the incompleteness.
-                    // This line needs to be completed or removed for the Haxe code to compile.
+                    tweenStart([obj_game, "field." + oSide], {x : 0.}, 1, "out_quad"); 
 
-
-            // Update modBeat at the end of beat processing if started
             modBeat = modBeat + 1; // Increment modBeat AFTER using its value for the current beat
         }
     } // End of onBeatHit
