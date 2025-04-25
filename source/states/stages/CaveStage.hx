@@ -17,25 +17,25 @@ class CaveStage extends BaseStage // Replace MusicBeatState with your actual bas
 {
     override public function create():Void
     {
-        var bg:BGSprite = new BGSprite('bg', 'cavebg/bg', -1000, 300);
+        var bg:BGSprite = new BGSprite('cavebg/bg', -1000, 300);
 	    add(bg);
 
-        var super_bg:BGSprite = new BGSprite('super_bg', 'cavebg/super_bg', -1000, -300);
+        var super_bg:BGSprite = new BGSprite('cavebg/super_bg', -1000, -300);
 	    add(super_bg);
 
-        var ground:BGSprite = new BGSprite('ground', 'cavebg/ground', -1000, 900);
+        var ground:BGSprite = new BGSprite('cavebg/ground', -1000, 900);
 	    add(ground);
     
-        var ceil:BGSprite = new BGSprite('ceil', 'cavebg/ceil', -1000, -700);
+        var ceil:BGSprite = new BGSprite('cavebg/ceil', -1000, -700);
 	    add(ceil);
 
-        var cal1:BGSprite = new BGSprite('cal1', 'cavebg/cal1', -1000, -300);
+        var cal1:BGSprite = new BGSprite('cavebg/cal1', -1000, -300);
 	    add(cal1);
   
-        var cal2:BGSprite = new BGSprite('cal2', 'cavebg/cal2', -450, -100);
+        var cal2:BGSprite = new BGSprite('cavebg/cal2', -450, -100);
 	    add(cal2);
 
-        var es1:BGSprite = new BGSprite('es1', 'cavebg/es1', -950, 400);
+        var es1:BGSprite = new BGSprite('cavebg/es1', -950, 400);
 	    add(es1);
     }
 }
