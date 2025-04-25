@@ -1,7 +1,7 @@
 package states.stages;
 
 import states.stages.objects.*;
-
+import haxe.ds.Vector;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.transition.FlxTransitionableState;
@@ -9,6 +9,7 @@ import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.math.FlxMath;
 import flixel.util.FlxColor;
 import flixel.system.FlxSound;
+import Math;
 
 // Assuming this class extends a base state like MusicBeatState or similar
 // which provides the necessary functions and variables (curBeat, lowQuality, etc.)
