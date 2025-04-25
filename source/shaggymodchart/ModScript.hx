@@ -1,3 +1,5 @@
+package shaggymodchart;
+
 import Math;
 import Std;
 
