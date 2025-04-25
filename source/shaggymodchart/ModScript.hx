@@ -491,8 +491,8 @@ class ModScript {
 					if (curSide == 0) {
 						w = w * -1;
 					}
-					tweenStart([obj_game, "field." + curSide], {x: w, z: 0.}, 1, "out_quad");
-					tweenStart([obj_game, "field." + oSide], {x: 0., z: -100.}, 1, "out_quad");
+					tweenStart([obj_game, "field." + curSide], {x: w, z: 0}, 1, "out_quad");
+					tweenStart([obj_game, "field." + oSide], {x: 0, z: -100}, 1, "out_quad");
 					modBeat = modBeat + 1;
 				}
 			}
