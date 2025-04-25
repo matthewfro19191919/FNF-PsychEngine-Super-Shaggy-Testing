@@ -5,10 +5,13 @@ import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.geom.Point;
 import shaggymodchart.ModScript;
+import states.stages.objects.*;
 
-class CaveStage
+class CaveStage extends BaseStage
+{
 
-function create():Void {
+override function create()
+{
     var bg = sprite_load("cavebg/bg");
     offset_setby_fraction(bg, 0.5, 0.5);
     var super_bg = sprite_load("cavebg/super_bg");
@@ -50,23 +53,4 @@ function drawBG() {
     var gp = scroll_get_pos(0, -100, 0.8);
     draw_floor(ground, 0, 0, 0, gp[1], gp[2]);
 }
-
-public function initModchart()
-{
-    var newScript:ModScript = null;
-    try
-    {
-	    newScript = new ModScript(null);
-	    if (newScript.exists('create')) newScript.call('create');
-		    trace('initialized ModScript interp successfully');
-		    push(newScript);
-    }
-    catch(e:IrisError)
-    {
-	    var pos:ModScriptInfos = cast {showLine: false};
-	    Iris.error(Printer.errorToString(e, false), pos);
-	    var newScript:ModScript = cast (Iris.instances.get(), ModScript);
-	    if(newScript != null)
-		    newScript.destroy();
-	}
 }
