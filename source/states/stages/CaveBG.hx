@@ -1,4 +1,6 @@
-package states.stages;// Required Dependencies/Imports (Assuming a HaxeFlixel or similar context)
+package states.stages;
+
+// Required Dependencies/Imports (Assuming a HaxeFlixel or similar context)
 // Note: These imports are assumptions based on common Haxe game frameworks.
 // The actual imports might differ based on the specific framework used.
 import haxe.ds.Vector; // Or Array<Float> depending on scroll_get_pos return type
