@@ -4,6 +4,7 @@ import openfl.display.Sprite;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.geom.Point;
+import shaggymodchart.ModScript;
 
 class CaveStage
 
@@ -48,4 +49,24 @@ function drawBG() {
     draw_sprite_scrolled(cal1, 0, -70, -600, 0.7, 0.7);
     var gp = scroll_get_pos(0, -100, 0.8);
     draw_floor(ground, 0, 0, 0, gp[1], gp[2]);
+}
+
+public function initModchart()
+{
+    var newScript:ModScript = null;
+    try
+    {
+	    newScript = new ModScript(null);
+	    if (newScript.exists('create')) newScript.call('create');
+		    trace('initialized ModScript interp successfully');
+		    push(newScript);
+    }
+    catch(e:IrisError)
+    {
+	    var pos:ModScriptInfos = cast {showLine: false};
+	    Iris.error(Printer.errorToString(e, false), pos);
+	    var newScript:ModScript = cast (Iris.instances.get(), ModScript);
+	    if(newScript != null)
+		    newScript.destroy();
+	}
 }
