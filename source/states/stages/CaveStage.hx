@@ -1,3 +1,7 @@
+package states.stages;
+
+import states.stages.objects.*;
+
 import haxe.ds.Vector; // Using Vector for fixed-size array potentially accessed by index
 import haxe.ds.StringMap; // Potentially useful for dynamic properties if needed, though prop_set handles strings
 import Math; // For Math functions
