@@ -113,7 +113,7 @@ class GameAPI {
             var part = parts[i];
             var index:Null<Int> = Std.parseInt(part);
             if (index != null && Reflect.hasField(obj, "length") && Std.isOfType(obj, Array)) { // Check if it's an array index
-                 obj = obj[index];
+                 obj:Array<Int> = obj[index];
             } else if (Reflect.hasField(obj, part)) {
                 obj = Reflect.field(obj, part);
             } else {
