@@ -194,17 +194,11 @@ import haxe.ds.Vector;
  */
 class CaveStage extends BaseStage // Replace MusicBeatState with your actual base class if different
     // These need to be initialized appropriately by the engine/game state
-    bf:Character = { x: 0.0, prop: { cam: [0.0, 0.0] } }; // Example structure matching prop_set usage
-    dad:Character = { x: 0.0 };
-    gf:Character = { x: 0.0 };
     defaultCamZoom:Float = 1.0;
     public static var camToZoom:Float = 1.0;
 
     // Helper to initialize dummy data if needed for standalone testing
     public static function initDefaults() {
-       bf = { x: 0.0, y: 0.0, prop: { cam: [100.0, 100.0] } }; // Example with initial cam values
-       dad = { x: 0.0, y: 0.0 };
-       gf = { x: 0.0, y: 0.0 };
        camZoom = 1.0;
        camToZoom = 1.0;
     }
