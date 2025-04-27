@@ -49,21 +49,5 @@ class CaveStage extends BaseStage
         ground = new FlxSprite().loadGraphic(Paths.image('cavebg/ground'));
         ground.scrollFactor.set(0.8, 0.8);
         add(ground);
-
-        if (PlayState.boyfriend != null)
-        {
-            PlayState.boyfriend.x = 750;
-            PlayState.boyfriend.cameraPosition.x -= 300;
-            PlayState.boyfriend.cameraPosition.y -= 50;
-        }
-
-        if (PlayState.dad != null)
-            PlayState.dad.x = -750;
-
-        if (PlayState.gf != null)
-            PlayState.gf.x = 80;
-
-        PlayState.defaultCamZoom = 0.55;
-        PlayState.camGame.zoom = PlayState.defaultCamZoom;
     }
 }
