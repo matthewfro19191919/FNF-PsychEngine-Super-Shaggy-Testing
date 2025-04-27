@@ -141,7 +141,7 @@ import haxe.ds.Vector;
  * Placeholder for the engine's scrolled sprite drawing function.
  * Replace with the actual engine function.
  */
-@:keep function draw_sprite_scrolled(sprite:, camX:Float, camY:Float, x:Float, scrollX:Float, scrollY:Float):Void {
+@:keep function draw_sprite_scrolled(sprite:FlxSprite, camX:Float, camY:Float, x:Float, scrollX:Float, scrollY:Float):Void {
     // Engine-specific implementation needed here
     trace('draw_sprite_scrolled called. Engine implementation needed.');
     // Example: This often requires manual calculation and drawing onto a camera buffer or using engine-specific sprite properties/methods.
