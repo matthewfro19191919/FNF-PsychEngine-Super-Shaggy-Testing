@@ -194,7 +194,7 @@ class MathUtil {
 }
 
 
-class CaveBG {
+class CaveStage extends BaseStage {
 
     // Variables from the first 'create' function (related to background)
     static var bg:Sprite;
