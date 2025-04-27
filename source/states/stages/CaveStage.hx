@@ -13,7 +13,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
  * Placeholder for the engine's sprite loading function.
  * Replace with the actual engine function (e.g., Paths.getSparrowAtlas, new FlxSprite().loadGraphic).
  */
-@:keep function sprite_load(path:String):Dynamic {
+@:keep function sprite_load(path:String):FlxSprite {
     // Engine-specific implementation needed here
     // Example: return new FlxSprite().loadGraphic(Paths.image(path));
     trace('sprite_load called with: $path. Engine implementation needed.');
@@ -25,7 +25,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
  * Placeholder for the engine's function to set sprite offset by fraction.
  * Replace with the actual engine function (e.g., sprite.setGraphicSize, sprite.updateHitbox).
  */
-@:keep function offset_setby_fraction(sprite:Dynamic, x:Float, y:Float):Void {
+@:keep function offset_setby_fraction(sprite:FlxSprite, x:Float, y:Float):Void {
     // Engine-specific implementation needed here
     // Example: if (Std.isOfType(sprite, FlxSprite)) {
     //              var flxSprite:FlxSprite = cast sprite;
@@ -38,10 +38,10 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
 }
 
 /**
- * Placeholder for the engine's dynamic property setting function.
+ * Placeholder for the engine's FlxSprite property setting function.
  * Replace with the actual engine function or use direct property access.
  */
-@:keep function prop_set(obj:Dynamic, prop:String, value:Dynamic):Void {
+@:keep function prop_set(obj:FlxSprite, prop:String, value:FlxSprite):Void {
     // Engine-specific implementation needed here
     // Example using Reflect API for basic cases:
     trace('prop_set called: obj=$obj, prop=$prop, value=$value. Engine implementation or Reflect needed.');
@@ -55,7 +55,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
             // Handle potential array access like "cam.0"
             var index = Std.parseInt(fieldName);
             if (index != null && Std.isOfType(currentObj, Array)) {
-                 var arr:Array<Dynamic> = cast currentObj;
+                 var arr:Array<FlxSprite> = cast currentObj;
                  if (index >= 0 && index < arr.length) {
                     currentObj = arr[index];
                  } else {
@@ -64,7 +64,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
                  }
             } else if (index != null && Std.isOfType(currentObj, Vector)) {
                  #if (!cpp) // Vector access syntax varies across targets
-                 var vec:Vector<Dynamic> = cast currentObj;
+                 var vec:Vector<FlxSprite> = cast currentObj;
                  if (index >= 0 && index < vec.length) {
                     currentObj = vec[index];
                  } else {
@@ -85,7 +85,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
     var finalField = fields[fields.length - 1];
     var index = Std.parseInt(finalField);
      if (index != null && Std.isOfType(currentObj, Array)) {
-         var arr:Array<Dynamic> = cast currentObj;
+         var arr:Array<FlxSprite> = cast currentObj;
          if (index >= 0) {
             while (arr.length <= index) arr.push(null); // Ensure array is large enough
             arr[index] = value;
@@ -94,7 +94,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
          }
     } else if (index != null && Std.isOfType(currentObj, Vector)) {
          #if (!cpp)
-         var vec:Vector<Dynamic> = cast currentObj;
+         var vec:Vector<FlxSprite> = cast currentObj;
          if (index >= 0 && index < vec.length) { // Assume vector size is fixed or managed elsewhere
             vec[index] = value;
          } else {
@@ -138,7 +138,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
  * Placeholder for the engine's scrolled sprite drawing function.
  * Replace with the actual engine function.
  */
-@:keep function draw_sprite_scrolled(sprite:Dynamic, camX:Float, camY:Float, x:Float, scrollX:Float, scrollY:Float):Void {
+@:keep function draw_sprite_scrolled(sprite:, camX:Float, camY:Float, x:Float, scrollX:Float, scrollY:Float):Void {
     // Engine-specific implementation needed here
     trace('draw_sprite_scrolled called. Engine implementation needed.');
     // Example: This often requires manual calculation and drawing onto a camera buffer or using engine-specific sprite properties/methods.
@@ -171,7 +171,7 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
  * Placeholder for the engine's floor/ceiling drawing function.
  * Replace with the actual engine function. This might involve tiling a sprite.
  */
-@:keep function draw_floor(sprite:Dynamic, camX:Float, camY:Float, y:Float, scrollX:Float, scrollY:Float, ?ceil:Bool = false):Void {
+@:keep function draw_floor(sprite:, camX:Float, camY:Float, y:Float, scrollX:Float, scrollY:Float, ?ceil:Bool = false):Void {
     // Engine-specific implementation needed here
     trace('draw_floor called: y=$y, scrollX=$scrollX, scrollY=$scrollY, ceil=$ceil. Engine implementation needed.');
     // Example: This might involve creating a tiled sprite or manually drawing tiles.
@@ -191,10 +191,10 @@ import haxe.ds.Vector; // Example if prop.cam is a Vector
  */
 class CaveStage extends BaseStage // Replace MusicBeatState with your actual base class if different
     // These need to be initialized appropriately by the engine/game state
-    public static var bf:Dynamic = { x: 0.0, prop: { cam: [0.0, 0.0] } }; // Example structure matching prop_set usage
-    public static var dad:Dynamic = { x: 0.0 };
-    public static var gf:Dynamic = { x: 0.0 };
-    public static var camZoom:Float = 1.0;
+    bf:Character = { x: 0.0, prop: { cam: [0.0, 0.0] } }; // Example structure matching prop_set usage
+    dad:Character = { x: 0.0 };
+    gf:Character = { x: 0.0 };
+    defaultCamZoom:Float = 1.0;
     public static var camToZoom:Float = 1.0;
 
     // Helper to initialize dummy data if needed for standalone testing
@@ -225,17 +225,19 @@ class CaveStage // Using a class to encapsulate the functions
     // Static variables to hold sprite references, similar to Lua globals
     // Using Dynamic assuming the exact type from sprite_load isn't known,
     // but FlxSprite or engine-specific sprite class is likely.
-    static var bg:Dynamic;
-    static var super_bg:Dynamic;
-    static var es1:Dynamic;
-    static var cal1:Dynamic;
-    static var cal2:Dynamic;
-    static var ground:Dynamic;
-    static var ceil:Dynamic;
+    static var bg:FlxSprite;
+    static var super_bg:FlxSprite;
+    static var es1:FlxSprite;
+    static var cal1:FlxSprite;
+    static var cal2:FlxSprite;
+    static var ground:FlxSprite;
+    static var ceil:FlxSprite;
 
     // Corresponds to Lua's create() function
     public static function create():Void
     {
+        modInit(0);
+
         bg = sprite_load("cavebg/bg");
         offset_setby_fraction(bg, 0.5, 0.5);
         super_bg = sprite_load("cavebg/super_bg");
