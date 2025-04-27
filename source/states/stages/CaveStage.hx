@@ -1,9 +1,12 @@
 package states.stages;
 
-import states.stages.objects.*;// Required dependencies and imports
-import flixel.FlxSprite; // Assuming FlxSprite is the base sprite type
-import flixel.util.FlxColor; // Assuming FlxColor for color constants
-import haxe.ds.Vector; // Example if prop.cam is a Vector
+import states.stages.objects.*;
+import Reflect;
+import Std;
+import Math;
+import flixel.FlxSprite;
+import flixel.util.FlxColor;
+import haxe.ds.Vector;
 
 // --- Placeholder definitions for engine-provided functions and classes ---
 // These functions and classes are assumed to be provided by the target Haxe game engine (e.g., FNF engine).
@@ -290,3 +293,727 @@ class CaveStage // Using a class to encapsulate the functions
         draw_floor(ground, 0, 0, 0, gp[0], gp[1]); // Default for 'ceil' parameter is false
     }
 }
+
+// --- Assumed External Dependencies ---
+// These types and functions are assumed to exist in the Haxe environment
+// where this script will be used (e.g., provided by the game engine).
+
+// Assumed structure for the 'sys' object
+typedef Sys = {
+    public var skin:{ public var sep:Float; };
+    public var opt:{ public var downscroll:Bool; };
+}
+
+// Assumed global functions or static methods from the engine
+// Note: The exact signature of tweenStart might vary based on the engine's tween library.
+// This signature assumes it takes an Array<Dynamic> where target[0] is the object
+// and target[1] is the property path string.
+typedef Externals = {
+    public static var sys:Sys;
+    public static var obj_game:Dynamic; // The main game object, likely Dynamic
+    public static function tweenStart(target:Array<Dynamic>, properties:Dynamic, duration:Float, ease:String, ?delay:Float):Void;
+    public static function console_add(value:Dynamic):Void;
+    // Assuming degtorad and radtodeg might be provided externally as well
+    // If not, the helper implementations within ModScript will be used.
+    // public static function degtorad(degrees:Float):Float;
+    // public static function radtodeg(radians:Float):Float;
+}
+
+// --- Main Translated Class ---
+// Encapsulates the state and functions from the Lua script using static members.
+class ModScript {
+
+    // --- Global Variables ---
+    public static var mod:Int = 0;
+    public static var subMod:Int = 0;
+    public static var modBeat:Int = 0;
+    public static var modStep:Int = 0;
+    public static var started:Bool = false;
+
+    // --- Assumed Context Access ---
+    // These provide access to the assumed external objects/functions.
+    // They must be initialized by the external environment before use.
+    static var sys(get, never):Sys;
+    static function get_sys():Sys return Externals.sys;
+
+    static var obj_game(get, never):Dynamic;
+    static function get_obj_game():Dynamic return Externals.obj_game;
+
+    static var tweenStart(get, never):Array<Dynamic>->Dynamic->Float->String->Null<Float>->Void;
+    static function get_tweenStart() return Externals.tweenStart;
+
+    static var console_add(get, never):Dynamic->Void;
+    static function get_console_add() return Externals.console_add;
+
+    // --- Helper Functions ---
+
+    // Helper function to mimic Lua's prop_set(obj, path, value)
+    // Handles nested properties and array indices in the path string
+    static function prop_set(target:Dynamic, path:String, value:Dynamic):Void {
+        var parts = path.split('.');
+        var current:Dynamic = target;
+        var currentPath = ""; // For error reporting
+
+        for (i in 0...parts.length - 1) {
+            var part = parts[i];
+            currentPath += (currentPath == "" ? "" : ".") + part;
+
+            if (current == null) {
+                trace('Error: prop_set failed. Object is null at path "${currentPath}" for full path "${path}"');
+                return;
+            }
+
+            var index = Std.parseInt(part);
+            var next:Dynamic = null;
+
+            // Check if part is a valid integer index string (e.g., "0", "1")
+            if (index != null && Std.string(index) == part) {
+                 if (Std.isOfType(current, Array)) {
+                     var arr:Array<Dynamic> = cast current;
+                     if (index >= 0 && index < arr.length) {
+                         next = arr[index];
+                     } else {
+                         // Error if index is out of bounds during traversal,
+                         // as intermediate arrays/objects are assumed to exist.
+                         trace('Error: prop_set failed. Array index ${index} out of bounds (length ${arr.length}) at path "${currentPath}" for full path "${path}"');
+                         return;
+                     }
+                 } else {
+                     trace('Error: prop_set failed. Tried to access index ${index} on a non-Array type (${Type.typeof(current)}) at path "${currentPath}" for full path "${path}"');
+                     return;
+                 }
+            } else { // Part is a field name
+                try {
+                    // Use Reflect.field for potentially better performance and null checking
+                    next = Reflect.field(current, part);
+                    // Check if field genuinely doesn't exist vs. being null
+                    if (next == null && !Reflect.hasField(current, part)) {
+                         trace('Error: prop_set failed. Field "${part}" not found at path "${currentPath}" for full path "${path}"');
+                         return;
+                    }
+                } catch (e:Dynamic) {
+                     trace('Error: prop_set failed accessing field "${part}" at path "${currentPath}" for full path "${path}": ${e}');
+                     return;
+                }
+            }
+             current = next;
+        }
+
+        // Set the final part
+        var finalPart = parts[parts.length - 1];
+        currentPath += (currentPath == "" ? "" : ".") + finalPart;
+
+        if (current == null) {
+            // This can happen if the second-to-last part resolved to null
+            trace('Error: prop_set failed. Object is null before setting final property at path "${currentPath}" (was null at "${parts.slice(0, -1).join('.')}") for full path "${path}"');
+            return;
+        }
+
+        var finalIndex = Std.parseInt(finalPart);
+        // Check if finalPart is a valid integer index string
+        if (finalIndex != null && Std.string(finalIndex) == finalPart) {
+            if (Std.isOfType(current, Array)) {
+                var arr:Array<Dynamic> = cast current;
+                if (finalIndex >= 0) {
+                     // Ensure array is large enough (Haxe arrays auto-extend with nulls when setting out of bounds)
+                     // Explicitly push nulls for clarity and potential compatibility if target isn't standard Haxe Array
+                     while (arr.length <= finalIndex) {
+                         arr.push(null);
+                     }
+                     arr[finalIndex] = value;
+                } else {
+                     trace('Error: prop_set failed. Final array index ${finalIndex} is invalid at path "${currentPath}" for full path "${path}"');
+                }
+            } else {
+                trace('Error: prop_set failed. Tried to set index ${finalIndex} on a non-Array type (${Type.typeof(current)}) at path "${currentPath}" for full path "${path}"');
+            }
+        } else { // Final part is a field name
+            Reflect.setField(current, finalPart, value);
+        }
+    }
+
+    // Helper math functions (use these if not provided externally)
+    static inline function degtorad(degrees:Float):Float {
+        #if (haxe_ver >= 4.0) // Check if Math.degToRad exists (added in Haxe 4)
+        return Math.degToRad(degrees);
+        #else
+        return degrees * Math.PI / 180;
+        #end
+    }
+
+    static inline function radtodeg(radians:Float):Float {
+         #if (haxe_ver >= 4.0) // Check if Math.radToDeg exists (added in Haxe 4)
+         return Math.radToDeg(radians);
+         #else
+         return radians * 180 / Math.PI;
+         #end
+    }
+
+    // --- State Variables ---
+    // local l = sys.skin.sep; // Calculated where needed or initialized
+    public static var cnt:Array<Float>; // = [l*1.5, l / 2, -l / 2, -l*1.5]; // Initialized in create()
+
+    public static var centerY:Float = 270;
+
+    // rot = 0;
+    public static var rot:Float = 0;
+    // rotspd = 1;
+    public static var rotspd:Float = 1;
+    // circAng = degtorad(180);
+    public static var circAng:Float; // Initialized in create()
+
+    // curSide was identified as needing persistent state
+    public static var curSide:Int = 1;
+
+    // --- Translated Functions ---
+
+    public static function create():Void {
+        // Initialize state variables that depend on context or calculations
+        var l = sys.skin.sep; // Get separator from context
+        cnt = [l*1.5, l / 2, -l / 2, -l*1.5];
+        circAng = degtorad(180);
+
+        // Reset other state
+        mod = 0; // Explicitly reset mod here, though modInit(0) does it too
+        subMod = 0;
+        modBeat = 0;
+        modStep = 0;
+        started = false;
+        rot = 0;
+        rotspd = 1;
+        curSide = 1; // Reset curSide on create
+
+        // Call modInit for the initial state
+        modInit(0);
+    }
+
+    public static function modInit(Mod:Int):Void {
+        mod = Mod;
+        subMod = 0; // Reset subMod on every modInit
+        modBeat = 0; // Reset modBeat on every modInit
+        modStep = 0; // Reset modStep on every modInit
+
+        // Ensure 'cnt' is initialized if create() wasn't called first (e.g., direct call to modInit)
+        if (cnt == null) {
+             var l = sys.skin.sep;
+             cnt = [l*1.5, l / 2, -l / 2, -l*1.5];
+        }
+
+        tweenStart([obj_game, "field.0"], { x : 0.0, y : 0.0, z : 0.0 }, 0.1, "inout_quad");
+        tweenStart([obj_game, "field.1"], { x : 0.0, y : 0.0, z : 0.0 }, 0.1, "inout_quad");
+        for (i in 0...8) {
+            prop_set(obj_game, "strums." + i + ".lines.0.p", []); // Set 'p' to an empty array
+            tweenStart([obj_game, "strums." + i + ".lines.0"], { a : 270.0, ax : 0.0, ay : 0.0, w : 1.0 }, 0.1, "inout_quad");
+            tweenStart([obj_game, "strums." + i + ".lines.1"], { a : 270.0, ax : 0.0, ay : 0.0, w : 1.0 }, 0.1, "inout_quad");
+            tweenStart([obj_game, "strums." + i + ".pos"], { x : 0.0, y : 0.0, z : 0.0 }, 0.1, "inout_quad");
+            tweenStart([obj_game, "strums." + i + ".ang3D"], { x : 0.0, y : 0.0, z : 0.0 }, 0.1, "inout_quad");
+            tweenStart([obj_game, "strums." + i + ".dir"], { x : 0.0, y : 0.0, z : 0.0 }, 0.1, "inout_quad");
+        }
+
+        if (mod == 0) {
+            curSide = 1; // Reset curSide specifically for mod 0 start
+            for (i in 0...8) {
+                // Set 'p' to an array containing one point object
+                prop_set(obj_game, "strums." + i + ".lines.0.p", [{ x : 0.0, y : 360.0, z : 0.0 }]);
+            }
+        }
+        else if (mod == 1) {
+            for (i in 0...8) {
+                prop_set(obj_game, "strums." + i + ".lines.0.p", [{ x : 0.0, y : 360.0, z : 0.0 }]);
+            }
+        }
+        else if (mod == 2) {
+            for (i in 0...8) {
+                // Set 'p' to an array containing two point objects
+                prop_set(obj_game, "strums." + i + ".lines.0.p", [{ x : 0.0, y : 720.0 / 4.0, z : 0.0 }, { x : 0.0, y : 720.0 / 4.0 * 3.0, z : 0.0 }]);
+            }
+
+            var l = sys.skin.sep;
+            var woo = l * 0.8;
+            for (i in 0...2) {
+                //idk (comment preserved)
+                var num0 = i*4;
+                var num1 = i*4 + 1;
+                var num2 = i*4 + 2;
+                var num3 = i*4 + 3;
+
+                var vdir:Float = 1.0;
+
+                if (sys.opt.downscroll) {
+                    vdir = -1.0;
+                }
+                tweenStart([obj_game, "strums." + num0 + ".pos"], { x : l * 1.5 - woo }, 0.2, "inout_quad");
+                tweenStart([obj_game, "strums." + num3 + ".pos"], { x : -l * 1.5 + woo }, 0.2, "inout_quad");
+                tweenStart([obj_game, "strums." + num1 + ".pos"], { x : l / 2.0, y : woo * vdir }, 0.2, "inout_quad");
+                tweenStart([obj_game, "strums." + num2 + ".pos"], { x : -l / 2.0, y : -woo * vdir }, 0.2, "inout_quad");
+            }
+            tweenStart([obj_game, "field.1"], { x : 380.0, y : centerY }, 0.3, "inout_quad");
+            tweenStart([obj_game, "field.1"], { z : -100.0 }, 0.5, "inout_quad");
+            tweenStart([obj_game, "field.0"], { y : 380.0 }, 1.0, "inout_quad");
+
+            var an:Array<Float> = [-90.0, 0.0, 180.0, 90.0]; // Haxe Array, 0-based index
+            if (sys.opt.downscroll) {
+                an[1] = 180.0; // Haxe index 1 (Original Lua index 2)
+                an[2] = 0.0;   // Haxe index 2 (Original Lua index 3)
+            }
+            for (i in 0...8) {
+                // Access Haxe array using 0-based index: an[i % 4]
+                tweenStart([obj_game, "strums." + i + ".dir"], { z : an[i % 4] }, 0.2, "inout_quad");
+            }
+        }
+        else if (mod == 3) {
+            tweenStart([obj_game, "field.1"], { x : 380.0, y : centerY }, 0.8, "out_quad");
+            tweenStart([obj_game, "field.0"], { x : -380.0, y : centerY }, 0.8, "out_quad");
+            for (i in 0...8) {
+                tweenStart([obj_game, "strums." + i + ".lines.0"], { ay : -60.0, w : 0.9 }, 0.11, "inout_quad");
+                prop_set(obj_game, "strums." + i + ".lines.0.p", [{ x : 0.0, y : 200.0, z : 100.0 }]);
+                tweenStart([obj_game, "strums." + i + ".lines.1"], { ay : -90.0 }, 0.11, "inout_quad");
+                // Access Haxe array using 0-based index: cnt[i % 4]
+                tweenStart([obj_game, "strums." + i + ".pos"], { x : cnt[i % 4] }, 0.11, "inout_quad");
+            }
+        }
+        else if (mod == 4) {
+            for (i in 0...8) {
+                var w:Float = 80.0;
+                if (i % 4 < 2) { w = w * -1.0; }
+                tweenStart([obj_game, "strums." + i + ".lines.0"], { ay : -30.0 }, 0.11, "inout_quad");
+                prop_set(obj_game, "strums." + i + ".lines.0.p", [{ x : 0.0, y : 360.0, z : 40.0 }]);
+                // Access Haxe array using 0-based index: cnt[i % 4]
+                tweenStart([obj_game, "strums." + i + ".pos"], { x : cnt[i % 4] + w }, 0.11, "inout_quad");
+            }
+        }
+        else if (mod == 5) {
+            for (i in 0...8) {
+                tweenStart([obj_game, "strums." + i + ".dir"], { x : 50.0 }, 1.0, "inout_quad");
+                tweenStart([obj_game, "strums." + i + ".ang3D"], { x : -50.0 }, 1.0, "inout_quad");
+            }
+            // curSide state carries over for mod 5 usage in onBeatHit
+        }
+    }
+
+    public static function update(elapsed:Float):Void {
+        if (started) {
+            if (mod == 0) {
+                rot = rot + elapsed * 5.0;
+                for (i in 0...8) {
+                    prop_set(obj_game, "strums." + i + ".pos.z", Math.cos(rot + i) * 40.0);
+                }
+
+                if (subMod == 1) {
+                    for (i in 0...8) {
+                        prop_set(obj_game, "strums." + i + ".dir.z", Math.cos(rot + i) * 10.0);
+                        prop_set(obj_game, "strums." + i + ".ang3D.z", Math.cos(rot + i) * 4.0);
+                    }
+                }
+            }
+            else if (mod == 3) {
+                if (subMod == 2) {
+                    rotspd = rotspd + elapsed;
+                }
+                else if (subMod == 3) {
+                    rotspd = rotspd - elapsed * 1.21;
+                    if (rotspd < 0.0) {
+                        rotspd = 0.0;
+                    }
+                    else {
+                        // Haxe equivalent of Lua's math.random(min, max) for integers: Std.random(max - min + 1) + min
+                        // Std.random(4 - (-4) + 1) + (-4) = Std.random(9) - 4
+                        var rndX = Std.random(9) - 4;
+                        var rndY = Std.random(9) - 4;
+                        tweenStart([obj_game, "field.1"], { x : 380.0 + rndX, y : centerY + rndY }, 0.01, "out_quad");
+                        rndX = Std.random(9) - 4; // Generate new random numbers
+                        rndY = Std.random(9) - 4;
+                        tweenStart([obj_game, "field.0"], { x : -380.0 + rndX, y : centerY + rndY }, 0.01, "out_quad");
+                    }
+                }
+                circAng = circAng + elapsed * rotspd;
+                for (i in 0...8) {
+                    var off:Float = -((i % 4) - 2.0) / 2.5; // Ensure float division
+                    var len:Float = 300.0;
+                    var xlen:Float = len;
+                    if (subMod >= 1) { xlen = 500.0; }
+                    var an:Float = circAng + off;
+                    if (i < 4) { an = an + degtorad(180.0); }
+                    // Access Haxe array using 0-based index: cnt[i % 4]
+                    prop_set(obj_game, "strums." + i + ".pos.x", cnt[i % 4] + Math.cos(an) * xlen);
+                    prop_set(obj_game, "strums." + i + ".pos.y", -Math.sin(an) * len);
+
+                    prop_set(obj_game, "strums." + i + ".dir.z", 270.0 + radtodeg(an - off));
+                }
+            }
+            else if (mod == 5) {
+                //[[ (Lua comment start)
+                //for i = 0, 7, 1 do
+                //    prop_set(obj_game, "strums."..i..".pos.z", math.cos(rot + i) * 100);
+                //end]] (Lua comment end)
+                // Translated comment block:
+                /*
+                for (i in 0...8) {
+                    prop_set(obj_game, "strums." + i + ".pos.z", Math.cos(rot + i) * 100.0);
+                }
+                */
+            }
+        }
+    }
+
+    public static function onBeatHit(beat:Int):Void {
+        //prop_set(obj_game, "strums.1.pos.x", -40); // Example commented line
+        //obj_fnf.gf.prop.beatDance = 4; // Example commented line (assumes obj_fnf exists)
+        //console_add(s.xscale); // Example commented line (assumes 's' exists)
+
+        if (beat == 0) {
+            started = true;
+        }
+
+        if (started) {
+            // --- Beat-based state changes ---
+            // Using 'else if' chain for mutually exclusive beat triggers
+            if (beat == 32) {
+                subMod = 1;
+            } else if (beat == 64) {
+                modInit(1);
+            } else if (beat == 128) {
+                modInit(2);
+            } else if (beat == 192) {
+                modInit(3);
+            } else if (beat == 256) {
+                modInit(4);
+            } else if (beat == 296) { // Occurs *after* 288 in original code
+                modInit(0);
+            } else if (beat == 288) {
+                mod = -1; // Special state not handled by modInit
+                for (i in 0...8) {
+                    tweenStart([obj_game, "strums." + i + ".pos"], { x : 0.0, y : 0.0, z : 0.0 }, 3.0, "inout_quad");
+                }
+            } else if (beat == 328) {
+                modInit(5);
+            } else if (beat == 392) {
+                modInit(3);
+                subMod = 1; // Set subMod *after* modInit resets it to 0
+            } else if (beat == 456) {
+                subMod = 2;
+            } else if (beat == 464) {
+                subMod = 3;
+            }
+
+            // --- Mod-specific beat actions ---
+            // These run *after* the state change for the current beat has occurred.
+            if (mod == 0) {
+                for (i in 0...8) {
+                    var h:Float = 20.0;
+                    if (beat % 2 == 0) { h = h * -1.0; }
+                    if (i % 2 == 0) { h = h * -1.0; }
+                    tweenStart([obj_game, "strums." + i + ".pos"], { y : 40.0 + h }, 0.2, "out_quad");
+                    tweenStart([obj_game, "strums." + i + ".pos"], { y : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+
+                    //prop_set(obj_game, "strums."..i..".lines.0.p.0.x", h); // Original commented line
+                    // Translated commented line (assuming path targets x of first point in p array):
+                    // prop_set(obj_game, "strums." + i + ".lines.0.p.0.x", h);
+
+                    h = 100.0; // Reset h for the next tween
+                    if (beat % 2 == 0) { h = h * -1.0; }
+                    // Assuming path targets the first point object {x,y,z} within the 'p' array: "lines.0.p.0"
+                    tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : h }, 0.2, "out_quad");
+                    tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                }
+
+                if (modBeat % 16 == 0) {
+                    var oSide = (curSide + 1) % 2;
+                    var w:Float = 200.0;
+                    if (curSide == 0) {
+                        w = w * -1.0;
+                    }
+                    tweenStart([obj_game, "field." + curSide], { x : w, z : 0.0 }, 1.0, "out_quad");
+                    tweenStart([obj_game, "field." + oSide], { x : 0.0, z : -100.0 }, 1.0, "out_quad");
+                    curSide = oSide;
+                }
+            }
+            else if (mod == 1) {
+                var a:Float = 30.0;
+                if (beat % 2 == 1) { a = a * -1.0; }
+
+                if (beat % 4 == 3) {
+                    for (i in 0...2) { // Loops 0, 1
+                        tweenStart([obj_game, "field." + i], { z : 100.0 }, 0.3, "out_quad");
+                        tweenStart([obj_game, "field." + i], { z : 0.0 }, 0.3, "in_quad", 0.3); // Delay added
+                    }
+                }
+
+                // Need a separate variable for sx calculation if 'a' changes mid-loop and is needed later
+                var originalA = a; // Store the initial value of 'a' for this beat
+                for (i in 0...8) { //angle & horizontal bounce
+                    if (beat % 4 == 3) {
+                        prop_set(obj_game, "strums." + i + ".ang3D.z", 360.0);
+                    }
+                    // Use the 'a' that might have been flipped in the previous iteration
+                    tweenStart([obj_game, "strums." + i + ".ang3D"], { z : a / 7.0 }, 0.18, "inout_quad");
+                    tweenStart([obj_game, "strums." + i + ".ang3D"], { z : 0.0 }, 0.18, "inout_quad", 0.18); // Delay added
+
+                    // Flip 'a' for the *next* iteration's angle tween and the current iteration's position tween
+                    if (i % 2 == 1) { a = a * -1.0; }
+
+                    // Lua: sx = (i % 4) - 2 * 50 --> (i%4) - 100
+                    var sx:Float = (i % 4) - 100.0;
+                    // Use the potentially flipped 'a' for position tween
+                    tweenStart([obj_game, "strums." + i + ".pos"], { x : sx + a * 1.2 }, 0.2, "out_quad");
+                    tweenStart([obj_game, "strums." + i + ".pos"], { x : sx }, 0.2, "in_quad", 0.2); // Delay added
+
+                    if (beat % 4 == i % 4) {
+                        tweenStart([obj_game, "strums." + i + ".pos"], { z : -300.0 }, 0.2, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".pos"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                    }
+                }
+
+                // Mod 1 beat-specific events based on modBeat
+                var up:Float = 400.0;
+                var shift:Float = 50.0;
+                if (modBeat == 0) { //show opponent, hide player
+                    tweenStart([obj_game, "field.1"], { x : 300.0, y : shift }, 0.9, "out_quad");
+                    tweenStart([obj_game, "field.0"], { y : -300.0 }, 0.5, "in_quad");
+                } else if (modBeat == 4) { //shift half receptors upwards (start moving field)
+                    // Lua: for i = 4, 7, 2 do -> loops i = 4, 6
+                    for (i in 4...8) {
+                       if (i % 2 == 0) { // Only run for i = 4, 6
+                           tweenStart([obj_game, "strums." + i + ".pos"], { y : up }, 2.0, "inout_quad");
+                           tweenStart([obj_game, "strums." + i + ".dir"], { x : -180.0 }, 2.0, "inout_quad");
+                       }
+                    }
+                    tweenStart([obj_game, "field.1"], { x : 500.0 }, 8.0, "linear");
+                } else if (modBeat == 12) { //the other half
+                    // Lua: for i = 5, 7, 2 do -> loops i = 5, 7
+                     for (i in 5...8) {
+                       if (i % 2 != 0) { // Only run for i = 5, 7
+                           tweenStart([obj_game, "strums." + i + ".pos"], { y : up }, 2.0, "inout_quad");
+                           tweenStart([obj_game, "strums." + i + ".dir"], { x : -180.0 }, 2.0, "inout_quad");
+                       }
+                    }
+                } else if (modBeat == 18) {
+                    for (i in 4...8) { // Loops 4, 5, 6, 7
+                        // Path: "lines.0.p.0" targets the first point object in the 'p' array
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : 20.0 }, 1.0, "inout_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.0"], { w : 0.8, a : 270.0 - 30.0 }, 1.0, "inout_quad");
+                    }
+                } else if (modBeat == 26 || modBeat == 28) {
+                    for (i in 4...8) { // Loops 4, 5, 6, 7
+                        tweenStart([obj_game, "strums." + i + ".ang3D"], { x : -45.0 }, 0.2, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".ang3D"], { x : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                    }
+                } else if (modBeat == 30) { //show player hide opponent
+                    tweenStart([obj_game, "field.1"], { x : 0.0, y : -300.0 }, 0.9, "in_quad");
+                    tweenStart([obj_game, "field.0"], { x : -200.0, y : shift }, 0.5, "out_quad");
+                    for (i in 4...8) { // Loops 4, 5, 6, 7
+                        tweenStart([obj_game, "strums." + i + ".pos"], { y : 0.0 }, 1.0, "inout_quad");
+                        tweenStart([obj_game, "strums." + i + ".dir"], { x : 0.0 }, 1.0, "inout_quad");
+                    }
+                } else if (modBeat == 36) { //movii (starts)
+                    // Lua: for i = 0, 3, 2 do -> loops i = 0, 2
+                     for (i in 0...4) {
+                       if (i % 2 == 0) { // Only run for i = 0, 2
+                           tweenStart([obj_game, "strums." + i + ".pos"], { y : up }, 2.0, "inout_quad");
+                           tweenStart([obj_game, "strums." + i + ".dir"], { x : -180.0 }, 2.0, "inout_quad");
+                       }
+                    }
+                    tweenStart([obj_game, "field.0"], { x : -400.0 }, 8.0, "linear");
+                } else if (modBeat == 44) { //the other half
+                    // Lua: for i = 1, 3, 2 do -> loops i = 1, 3
+                     for (i in 1...4) {
+                       if (i % 2 != 0) { // Only run for i = 1, 3
+                           tweenStart([obj_game, "strums." + i + ".pos"], { y : up }, 2.0, "inout_quad");
+                           tweenStart([obj_game, "strums." + i + ".dir"], { x : -180.0 }, 2.0, "inout_quad");
+                       }
+                    }
+                } else if (modBeat == 50) {
+                    for (i in 0...4) { // Loops 0, 1, 2, 3
+                        // Path: "lines.0.p.0"
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : -20.0 }, 1.0, "inout_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.0"], { w : 0.8, a : 270.0 + 30.0 }, 1.0, "inout_quad");
+                    }
+                } else if (modBeat == 58 || modBeat == 60) {
+                    for (i in 0...4) { // Loops 0, 1, 2, 3
+                        tweenStart([obj_game, "strums." + i + ".ang3D"], { x : -45.0 }, 0.2, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".ang3D"], { x : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                    }
+                }
+            }
+            else if (mod == 2) {
+                if (modBeat % 4 == 0) {
+                    for (i in 0...8) {
+                        // Path assumes p is array: "lines.0.p.0.z" and "lines.0.p.1.z"
+                        prop_set(obj_game, "strums." + i + ".lines.0.p.0.z", 0.0);
+                        prop_set(obj_game, "strums." + i + ".lines.0.p.1.z", 0.0);
+                        // Path assumes p is array: "lines.0.p.0" and "lines.0.p.1" target the point objects
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : 300.0 }, 0.05, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.1"], { x : -300.0 }, 0.05, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : 0.0 }, 0.3, "in_quad", 0.05); // Delay added
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.1"], { x : 0.0 }, 0.3, "in_quad", 0.05); // Delay added
+                    }
+                }
+                // Lua used 'if', not 'elseif', so this condition is checked independently
+                if (modBeat % 4 == 3) {
+                    for (i in 0...8) {
+                        // Path: "lines.0.p.0" and "lines.0.p.1"
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { x : -300.0 }, 0.3, "inout_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.1"], { x : 300.0 }, 0.3, "inout_quad");
+                    }
+                    //[[ (Lua comment start)
+                    //for i = 0, 7, 1 do
+                    //    tweenStart({obj_game, "strums."..i..".lines.0.p.0"}, {z = 1000}, 0.3, "in_quad");
+                    //    tweenStart({obj_game, "strums."..i..".lines.0.p.1"}, {z = -1000}, 0.3, "in_quad");
+                    //end]] (Lua comment end)
+                    // Translated comment block:
+                    /*
+                    for (i in 0...8) {
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.0"], { z : 1000.0 }, 0.3, "in_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.0.p.1"], { z : -1000.0 }, 0.3, "in_quad");
+                    }
+                    */
+                }
+
+                var a:Float = 8.0;
+                if (modBeat % 2 == 1) { a = a * -1.0; }
+                for (i in 0...8) {
+                    tweenStart([obj_game, "strums." + i + ".ang3D"], { z : a }, 0.2, "out_quad");
+                    tweenStart([obj_game, "strums." + i + ".ang3D"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+
+                    var ind:Array<Int> = [3, 2, 0, 1]; // Haxe Array, 0-based index
+                    // Access Haxe array using 0-based index: ind[i % 4]
+                    if (beat % 4 == ind[i % 4]) {
+                        tweenStart([obj_game, "strums." + i + ".ang3D"], { y : a * 4.0 }, 0.2, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".ang3D"], { y : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                    }
+                }
+
+                // Mod 2 beat-specific events based on modBeat
+                if (modBeat == 1) {
+                    //tweenStart({obj_game, "field.1"}, {z = -200}, 7, "linear"); // Original comment
+                    // Translated comment: tweenStart([obj_game, "field.1"], { z : -200.0 }, 7.0, "linear");
+                } else if (modBeat == 14) {
+                    tweenStart([obj_game, "field.0"], { x : -380.0, y : centerY }, 0.3, "inout_quad");
+                    tweenStart([obj_game, "field.0"], { z : -100.0 }, 0.5, "inout_quad");
+                    tweenStart([obj_game, "field.1"], { x : 0.0, z : -400.0 }, 0.2, "inout_quad");
+                    tweenStart([obj_game, "field.1"], { y : -400.0, z : 0.0 }, 0.7, "in_elastic");
+                } else if (modBeat == 16) {
+                    //tweenStart({obj_game, "field.0"}, {z = -200}, 7, "linear"); // Original comment
+                    // Translated comment: tweenStart([obj_game, "field.0"], { z : -200.0 }, 7.0, "linear");
+                    for (i in 4...8) { // Loops 4, 5, 6, 7
+                        prop_set(obj_game, "strums." + i + ".pos.x", 0.0);
+                        prop_set(obj_game, "strums." + i + ".pos.y", 0.0);
+                        prop_set(obj_game, "strums." + i + ".dir.z", -180.0);
+                    }
+                } else if (modBeat == 32) {
+                    tweenStart([obj_game, "field.1"], { y : 0.0 }, 0.4, "out_quad");
+                    tweenStart([obj_game, "field.0"], { x : 0.0 }, 0.6, "inout_quad");
+                    for (i in 4...8) { // Loops 4, 5, 6, 7
+                        tweenStart([obj_game, "strums." + i + ".dir"], { z : 0.0 }, 0.4, "out_quad");
+                    }
+                } else if (modBeat == 46) {
+                    tweenStart([obj_game, "field.1"], { y : -400.0, z : 0.0 }, 0.7, "in_elastic");
+                    tweenStart([obj_game, "field.0"], { x : -380.0 }, 0.6, "inout_quad");
+                } else if (modBeat == 48) {
+                    var l = sys.skin.sep;
+
+                    tweenStart([obj_game, "strums.0.pos"], { x : l * 1.5 }, 6.0, "inout_quad");
+                    tweenStart([obj_game, "strums.3.pos"], { x : -l * 1.5 }, 6.0, "inout_quad");
+                    tweenStart([obj_game, "strums.1.pos"], { x : l / 2.0, y : 0.0 }, 6.0, "inout_quad");
+                    tweenStart([obj_game, "strums.2.pos"], { x : -l / 2.0, y : 0.0 }, 6.0, "inout_quad");
+
+                    for (i in 0...4) { // Loops 0, 1, 2, 3
+                        tweenStart([obj_game, "strums." + i + ".lines.0"], { a : 270.0 + 100.0 }, 6.0, "inout_quad");
+                        tweenStart([obj_game, "strums." + i + ".lines.1"], { a : 270.0 + 100.0 }, 6.0, "inout_quad");
+                    }
+                }
+            }
+            else if (mod == 3) {
+                if (subMod < 3) {
+                    for (i in 0...8) {
+                        var h:Float = 20.0;
+                        if (beat % 2 == 0) { h = h * -1.0; }
+                        if (i % 2 == 0) { h = h * -1.0; }
+                        tweenStart([obj_game, "strums." + i + ".pos"], { z : 40.0 + h }, 0.2, "out_quad");
+                        tweenStart([obj_game, "strums." + i + ".pos"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                    }
+                }
+
+                // Mod 3 beat-specific events based on modBeat
+                if (modBeat == 12 || modBeat == 14) {
+                    tweenStart([obj_game, "field.1"], { z : -100.0 }, 0.2, "out_quad");
+                    tweenStart([obj_game, "field.1"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+
+                    tweenStart([obj_game, "field.0"], { z : 100.0 }, 0.2, "out_quad");
+                    tweenStart([obj_game, "field.0"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                } else if (modBeat == 44 || modBeat == 46) {
+                    tweenStart([obj_game, "field.0"], { z : -100.0 }, 0.2, "out_quad");
+                    tweenStart([obj_game, "field.0"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+
+                    tweenStart([obj_game, "field.1"], { z : 100.0 }, 0.2, "out_quad");
+                    tweenStart([obj_game, "field.1"], { z : 0.0 }, 0.2, "in_quad", 0.2); // Delay added
+                }
+            }
+            else if (mod == 4) {
+                for (i in 0...8) {
+                    var h:Float = 20.0;
+                    if (beat % 2 == 0) { h = h * -1.0; }
+                    if (i % 4 >= 2) { h = h * -1.0; } // Check if remainder is 2 or 3
+                    tweenStart([obj_game, "strums." + i + ".pos"], { y : h, z : -h }, 0.1, "out_quad");
+                    tweenStart([obj_game, "strums." + i + ".pos"], { y : 0.0, z : 0.0 }, 0.3, "in_quad", 0.1); // Delay added
+                }
+            }
+            else if (mod == 5) {
+                var dumb = (curSide + 1) % 2; // Uses curSide state
+                if (modBeat % 4 == 0) {
+                    tweenStart([obj_game, "field." + dumb], { y : 0.0 }, 0.4, "out_elastic");
+                }
+                // Lua used 'if', not 'elseif'
+                if (modBeat % 4 == 3) {
+                    tweenStart([obj_game, "field." + dumb], { y : 300.0 }, 0.3, "inout_quad");
+                }
+                // Lua used 'if', not 'elseif'
+                if (modBeat % 32 == 0) {
+                    var oSide = (curSide + 1) % 2;
+                    var w:Float = 200.0;
+                    if (curSide == 0) {
+                        w = w * -1.0;
+                    }
+                    tweenStart([obj_game, "field." + curSide], { x : w, z : 0.0 }, 1.0, "out_quad");
+                    tweenStart([obj_game, "field." + oSide], { x : 0.0, z : -100.0 }, 1.0, "out_quad");
+                    curSide = oSide;
+                }
+            }
+            // This check should only happen if mod is NOT -1, as mod = -1 has its own logic block triggered by beat 288
+            // However, the original Lua code doesn't prevent this. It increments modBeat even if mod became -1.
+            // To be exact, we increment modBeat regardless of the mod value, unless modInit was called (which resets it).
+            // The only case modBeat isn't incremented is if 'started' is false.
+            if (mod != -1) { // Let's assume modBeat only increments for active mods, though Lua code didn't explicitly check this.
+                             // Reverting this assumption to match Lua exactly: modBeat increments if started is true.
+            }
+             // Increment modBeat at the end of the beat processing if started
+             modBeat = modBeat + 1;
+
+        } // end if(started)
+    }
+
+    public static function onStepHit(step:Int):Void {
+        if (started) {
+            if (mod == 0) {
+                if (subMod == 1) {
+                    for (i in 0...8) {
+                        if (step % 8 == 6) {
+                            var h:Float = -300.0; // Variable declared locally within the if block scope
+                            if (step % 16 == 6) {
+                                h = h * -1.0; // Original Lua code ends abruptly after the '*'
+                                // The line was: if (step % 16 == 6) then h = h * ```
+                                // Translated the logic up to the point of cutoff.
+                                // No action using 'h' follows in the original code provided.
+                            }
+                            // No action using 'h' here either.
+                        }
+                    }
+                }
+            }
+            // No other mods handled in onStepHit in the provided code.
+
+            // Increment modStep if needed (original code doesn't use it after init)
+            // modStep = modStep + 1;
+        }
+    }
+} // End of class ModScript
