@@ -109,7 +109,7 @@ class GameAPI {
         trace('GameAPI.prop_set:Setting property "$propertyPath" on target to $value');
         var parts = propertyPath.split(".");
         var obj = target;
-        for (i in 0...parts.length - 1) {
+        for (i in 0 parts.length - 1) {
             var part = parts[i];
             var index:Null<Int> = Std.parseInt(part);
             if (index != null && Reflect.hasField(obj, "length") && Std.isOfType(obj, Array)) { // Check if it's an array index
@@ -228,7 +228,7 @@ class CaveStage extends BaseStage {
     static var curSide:Int = 0; // Used in onBeatHit mod 0 logic
 
     // Corresponds to the first Lua 'create' function
-    public static function create():Void {
+    override function create():Void {
         bg = GameAPI.sprite_load("cavebg/bg");
         GameAPI.offset_setby_fraction(bg, 0.5, 0.5);
         super_bg = GameAPI.sprite_load("cavebg/super_bg");
@@ -376,7 +376,7 @@ class CaveStage extends BaseStage {
     }
 
 
-    public static function update(elapsed:Float):Void {
+    override function update(elapsed:Float):Void {
         if (started) {
             if (mod == 0) {
                 rot = rot + elapsed * 5;
@@ -545,7 +545,7 @@ class CaveStage extends BaseStage {
 
                     if (i % 2 == 1) { a = a * -1; } // Flip 'a' for alternate strums
 
-                    var sx = (i % 4) - 2 * 50; // Calculation seems off, maybe ((i % 4) - 2) * 50? Translating literally.
+                    var sx:Float = (i % 4) - 2 * 50; // Calculation seems off, maybe ((i % 4) - 2) * 50? Translating literally.
                                                // Let's assume it means ((i % 4) - 1.5) * offset or similar. Sticking to literal:(i%4) - 100
                                                // Re-reading:it's likely `( (i % 4) - 2 ) * 50` or similar based on common patterns.
                                                // But sticking to exact translation:`(i % 4) - 100.0`
