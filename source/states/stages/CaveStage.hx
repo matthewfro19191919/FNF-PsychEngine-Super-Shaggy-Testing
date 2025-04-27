@@ -109,7 +109,7 @@ class GameAPI {
         trace('GameAPI.prop_set:Setting property "$propertyPath" on target to $value');
         var parts = propertyPath.split(".");
         var obj:Array<Int<0>> = target;
-        for (i in 0, parts.length - 1) {
+        for (i in 0...parts.length - 1) {
             var part = parts[i];
             var index:Null<Int> = Std.parseInt(part);
             if (index != null && Reflect.hasField(obj, "length") && Std.isOfType(obj, Array)) { // Check if it's an array index
