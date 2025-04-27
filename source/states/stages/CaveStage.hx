@@ -174,7 +174,7 @@ import haxe.ds.Vector;
  * Placeholder for the engine's floor/ceiling drawing function.
  * Replace with the actual engine function. This might involve tiling a sprite.
  */
-@:keep function draw_floor(sprite:, camX:Float, camY:Float, y:Float, scrollX:Float, scrollY:Float, ?ceil:Bool = false):Void {
+@:keep function draw_floor(sprite:FlxSprite, camX:Float, camY:Float, y:Float, scrollX:Float, scrollY:Float, ?ceil:Bool = false):Void {
     // Engine-specific implementation needed here
     trace('draw_floor called: y=$y, scrollX=$scrollX, scrollY=$scrollY, ceil=$ceil. Engine implementation needed.');
     // Example: This might involve creating a tiled sprite or manually drawing tiles.
