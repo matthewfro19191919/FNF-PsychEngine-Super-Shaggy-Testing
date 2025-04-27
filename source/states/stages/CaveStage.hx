@@ -108,7 +108,7 @@ class GameAPI {
         // Implementation requires reflection or a specific property access system
         trace('GameAPI.prop_set:Setting property "$propertyPath" on target to $value');
         var parts = propertyPath.split(".");
-        var obj:Array<Int<0>> = target;
+        var obj:Array<Int> = target;
         for (i in 0...parts.length - 1) {
             var part = parts[i];
             var index:Null<Int> = Std.parseInt(part);
